@@ -221,20 +221,46 @@ IO22D08timer board;               // create an instance of the relay board with 
 
 void readInput()
 {
-  for (size_t i = 0; i < noOfOptoIn; i++)
-  {
-     if (digitalRead(optoInPin[i]) == LOW)
-    {
-      board.startTimer(i);                             // activate pin on board
-    }
-  }
-  for (size_t i = 0; i < noOfKeyIn; i++)
-  {
-    if (digitalRead(keyInPin[i]) == LOW)
-    {
-      key_value = i;
-    }
-  }
+  if (digitalRead(optoInPin[0]) == LOW) { // Left Blinker
+    board.pinWrite(0,HIGH);
+  } else 
+    board.pinWrite(0,LOW);
+    
+  if (digitalRead(optoInPin[1]) == LOW) { // Right Blinker
+    board.pinWrite(1,HIGH);
+  } else 
+    board.pinWrite(1,LOW);
+    
+  if (digitalRead(optoInPin[2]) == LOW) { // Lights
+    board.pinWrite(2,HIGH);
+  } else 
+    board.pinWrite(2,LOW);
+    
+  if (digitalRead(optoInPin[3]) == LOW) { // High Beam
+    board.pinWrite(3,HIGH);
+  } else 
+    board.pinWrite(3,LOW);
+    
+  if (digitalRead(optoInPin[4]) == LOW) { // High Beam
+    board.pinWrite(4,HIGH);
+  } else 
+    board.pinWrite(4,LOW);
+    
+  if (digitalRead(optoInPin[5]) == LOW) { // Brake Light
+    board.pinWrite(5,HIGH);
+  } else 
+    board.pinWrite(5,LOW);
+    
+  if (digitalRead(optoInPin[6]) == LOW) { // Ignition
+    board.pinWrite(6,LOW);
+  } else 
+    board.pinWrite(6,HIGH);
+
+  if (digitalRead(optoInPin[7]) == LOW) { // Start
+    board.pinWrite(7,HIGH);
+  } else 
+    board.pinWrite(7,LOW);
+  
 }
 
 void setup() {
@@ -244,15 +270,6 @@ void setup() {
   for (auto &i : optoInPin) pinMode(i, INPUT_PULLUP);      // init the optocoupler
   for (auto &i : keyInPin) pinMode(i, INPUT_PULLUP);       // init the discrete input keys
   board.begin();                                           // prepare the board hardware
-  // set some default values
-  board.delay_time[0] = 16;  // 1-9999 seconds,Modify the number change the delay time
-  board.delay_time[1] = 2;
-  board.delay_time[2] = 3;
-  board.delay_time[3] = 4;
-  board.delay_time[4] = 5;
-  board.delay_time[5] = 6;
-  board.delay_time[6] = 7;
-  board.delay_time[7] = 8;
 }
 
 void loop() {
