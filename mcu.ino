@@ -81,10 +81,10 @@ class IO22D08 {
       // currently only the first 10 characters (=numbers) are used, but I keep the definitions
       //        NO.:0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22 23 24 25 26 27 28*/
       // Character :0,1,2,3,4,5,6,7,8,9,A, b, C, c, d, E, F, H, h, L, n, N, o, P, r, t, U, -,  ,*/
-      const uint8_t TUBE_SEG[29] =
+      const uint8_t TUBE_SEG[31] =
       {0xc0, 0xf9, 0xa4, 0xb0, 0x99, 0x92, 0x82, 0xf8, 0x80, 0x90, // 0 .. 9
        0x88, 0x83, 0xc6, 0xa7, 0xa1, 0x86, 0x8e, 0x89, 0x8b, 0xc7, // A, b, C, c, d, E, F, H, h, L,
-       0xab, 0xc8, 0xa3, 0x8c, 0xaf, 0x87, 0xc1, 0xbf, 0xff};      // n, N, o, P, r, t, U, -,  ,
+       0xab, 0xc8, 0xa3, 0x8c, 0xaf, 0x87, 0xc1, 0xbf, 0xff,0xcf,0xc9};      // n, N, o, P, r, t, U, -, |, || ,
       uint8_t tube_dat;                                    // Common Cathode Digital Tube, bit negated - sum of all segments to be activated
       uint8_t bit_num;                                     // digital tube common gemappt auf tuble bit number
       uint8_t display_l, display_h, relay_dat;             // three databytes of payload to be shifted to the shift registers
@@ -159,6 +159,10 @@ class IO22D08 {
       dat_buf[3] = display_dat % 10;
     }
 
+    // Allow setting of arbitrary segments using additional codes
+    void setSeg(uint8_t whichDisp,uint8_t segment) {
+      dat_buf[whichDisp] = segment;
+    }
     // this method should be called in loop as often as possible
     // it will refresh the multiplex display
     void tick() {
@@ -186,44 +190,81 @@ void readInput()
 {
   if (digitalRead(optoInPin[0]) == LOW) { // Left Blinker
     board.pinWrite(0,board.blinkState);
-  } else 
+    board.setSeg(0,29); // display |
+  } else
     board.pinWrite(0,LOW);
-    
+
   if (digitalRead(optoInPin[1]) == LOW) { // Right Blinker
     board.pinWrite(1,board.blinkState);
+    board.setSeg(0,1);
   } else 
     board.pinWrite(1,LOW);
+  // Pair of inputs state indicators 
+  if ((digitalRead(optoInPin[0]) == LOW) && (digitalRead(optoInPin[1]) == LOW)) {
+    board.setSeg(0,30);
+  }
+  if ((digitalRead(optoInPin[0]) == HIGH) && (digitalRead(optoInPin[1]) == HIGH)) {
+    board.setSeg(0,28);
+  }
     
   if (digitalRead(optoInPin[2]) == LOW) { // Lights
     board.pinWrite(2,HIGH);
+    board.setSeg(1,29); // display |
   } else 
     board.pinWrite(2,LOW);
     
   if (digitalRead(optoInPin[3]) == LOW) { // High Beam
     board.pinWrite(3,HIGH);
+    board.setSeg(1,1);
   } else 
     board.pinWrite(3,LOW);
     
+  // Pair of inputs state indicators 
+  if ((digitalRead(optoInPin[2]) == LOW) && (digitalRead(optoInPin[3]) == LOW)) {
+    board.setSeg(1,30);
+  }
+  if ((digitalRead(optoInPin[2]) == HIGH) && (digitalRead(optoInPin[3]) == HIGH)) {
+    board.setSeg(1,28);
+  }
+    
   if (digitalRead(optoInPin[4]) == LOW) { // High Beam
     board.pinWrite(4,HIGH);
+    board.setSeg(2,29);
   } else 
     board.pinWrite(4,LOW);
-    
+ 
   if (digitalRead(optoInPin[5]) == LOW) { // Brake Light
     board.pinWrite(5,HIGH);
+    board.setSeg(2,1);
   } else 
     board.pinWrite(5,LOW);
+  // Pair of inputs state indicators 
+  if ((digitalRead(optoInPin[4]) == LOW) && (digitalRead(optoInPin[5]) == LOW)) {
+    board.setSeg(2,30);
+  }
+  if ((digitalRead(optoInPin[4]) == HIGH) && (digitalRead(optoInPin[5]) == HIGH)) {
+    board.setSeg(2,28);
+  } 
     
   if (digitalRead(optoInPin[6]) == LOW) { // Ignition
     board.pinWrite(6,LOW);
+    board.setSeg(3,29);
   } else 
     board.pinWrite(6,HIGH);
 
   if (digitalRead(optoInPin[7]) == LOW) { // Start
     board.pinWrite(7,HIGH);
+    board.setSeg(3,1);
   } else 
     board.pinWrite(7,LOW);
-  
+    
+  // Pair of inputs state indicators 
+  if ((digitalRead(optoInPin[6]) == LOW) && (digitalRead(optoInPin[7]) == LOW)) {
+    board.setSeg(3,30);
+  }
+  if ((digitalRead(optoInPin[6]) == HIGH) && (digitalRead(optoInPin[7]) == HIGH)) {
+    board.setSeg(3,28);
+  } 
 }
 
 void setup() {
