@@ -178,55 +178,9 @@ class IO22D08 {
 
 };
 
-// the timer class extends the basic IO22D08 board
-// with some timers for the relays
-// this is the specific implementation for this sketch
-class IO22D08timer : public IO22D08
-{
-  protected:
-    bool isActive[noOfRelay];          // timer of this relay is running
-    uint32_t previousTimer[noOfRelay]; // start time of relay
 
-  public:
-    IO22D08timer() : IO22D08() {}
 
-    uint16_t delay_time[noOfRelay];    // delay time of this relay - I'm to lazy to write a setter, therefore public
-
-    void startTimer(byte actual) {               // start the timer and activate the output
-      previousTimer[actual] = millis();
-      isActive[actual] = true;
-      pinWrite(actual, HIGH);
-    }
-
-    void tickTimer() {                           // a specialised "tick" method avoiding a virtual/override, hence the different name
-      uint32_t currentMillis = millis();
-      if (currentMillis - previousMillis > 1)    // each two milliseconds gives a stable display on pro Mini 8MHz (3ms will flicker)
-      {
-        // 01 check if there is something to do for the relay timers:
-        for (size_t i = 0; i < noOfRelay; i++)
-        {
-          if (isActive[i])                        // check for switch off
-          {
-            if (currentMillis - previousTimer[i] > delay_time[i] * 1000UL)
-            {
-              isActive[i] = false;
-              pinWrite(i, LOW);
-            }
-          }
-        }
-        // 02 update the output buffer
-        if (isActive[key_value])
-          setNumber(delay_time[key_value] - (millis() - previousTimer[key_value]) / 1000);  // calculate remaining time
-        else
-          setNumber(delay_time[key_value]);          // just show programmed delay time
-        // 03 default todos as in base class tick:
-        update();
-        previousMillis = currentMillis;
-      }
-    }
-};
-
-IO22D08timer board;               // create an instance of the relay board with timer extension
+IO22D08 board;               // create an instance of the relay board with timer extension
 
 void readInput()
 {
