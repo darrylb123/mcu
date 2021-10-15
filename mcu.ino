@@ -71,6 +71,7 @@ class IO22D08 {
     uint8_t relay_port;                // we need to keep track of the 8 relays in this variable
     uint8_t com_num;                   // Digital Tube Common - actual digit to be shown
     uint32_t previousMillis = 0;       // time keeping for periodic calls
+    uint32_t blinkMillis = 0;       // time keeping for periodic calls
 
     // low level HW access to shift registers
     // including mapping of pins
@@ -124,6 +125,7 @@ class IO22D08 {
 
   public:
     IO22D08() {}
+     uint8_t blinkState = 1;
 
     void begin() {
       digitalWrite(OE_595, LOW);       // Enable Pin of first 74HC595
@@ -166,7 +168,14 @@ class IO22D08 {
         update();
         previousMillis = currentMillis;
       }
+      if (currentMillis - blinkMillis > 500)    // each 500 milliseconds invert the blinker state
+      {
+        blinkState = !blinkState;
+        blinkMillis = currentMillis;
+      }
+      
     }
+
 };
 
 // the timer class extends the basic IO22D08 board
@@ -222,12 +231,12 @@ IO22D08timer board;               // create an instance of the relay board with 
 void readInput()
 {
   if (digitalRead(optoInPin[0]) == LOW) { // Left Blinker
-    board.pinWrite(0,HIGH);
+    board.pinWrite(0,board.blinkState);
   } else 
     board.pinWrite(0,LOW);
     
   if (digitalRead(optoInPin[1]) == LOW) { // Right Blinker
-    board.pinWrite(1,HIGH);
+    board.pinWrite(1,board.blinkState);
   } else 
     board.pinWrite(1,LOW);
     
@@ -274,5 +283,5 @@ void setup() {
 
 void loop() {
   readInput();            // handle input pins
-  board.tickTimer();      // timekeeping for display/
+  board.tick();      // timekeeping for display/
 }
