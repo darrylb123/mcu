@@ -58,6 +58,13 @@ const uint8_t noOfKeyIn = sizeof(keyInPin);                // calculate the numb
 const uint8_t noOfRelay = 8;                               // relays on board driven connected to shift registers
 byte key_value;                                            // the last pressed key
 
+// Blinker latch flags
+int latchLeft = 0;
+int latchRight = 0;
+uint32_t timeLeft = 0;
+uint32_t timeRight = 0;
+const int minBlink = 10;
+
 // the base class implements the basic functionality
 // which should be the same for all sketches with this hardware:
 // begin()     init the hardware
@@ -176,6 +183,11 @@ class IO22D08 {
       {
         blinkState = !blinkState;
         blinkMillis = currentMillis;
+        // Count down blinks for latched blinkers
+        if (latchLeft > 0)
+          latchLeft--;
+        if (latchRight > 0)
+          latchRight--;
       }
       
     }
@@ -188,17 +200,40 @@ IO22D08 board;               // create an instance of the relay board with timer
 
 void readInput()
 {
-  if (digitalRead(optoInPin[0]) == LOW) { // Left Blinker
+  /* Blinker logic: 
+   *  Blinkers latch & operate for a minimum of minBlink state changed
+   *  unless other blinker is is operated which unlatches
+   *  eg Right blinker switch initiates minBlink flashes unless the left blinker switch resets it
+   */
+  if (latchLeft)
     board.pinWrite(0,board.blinkState);
+  if (latchRight)
+    board.pinWrite(1,board.blinkState);
+    
+  if (digitalRead(optoInPin[0]) == LOW) { // Left Blinker
     board.setSeg(0,29); // display |
-  } else
+    if ( latchRight == 0 ) {
+      latchLeft = minBlink;
+    } else {
+      latchRight = 0;
+    }
+    
+     
+  } else if ( latchLeft == 0 )
     board.pinWrite(0,LOW);
 
   if (digitalRead(optoInPin[1]) == LOW) { // Right Blinker
-    board.pinWrite(1,board.blinkState);
     board.setSeg(0,1);
-  } else 
+    if ( latchLeft == 0 ) {
+      latchRight = minBlink;
+    } else {
+      latchLeft = 0;
+    }
+    
+    
+  } else if ( latchRight == 0 )
     board.pinWrite(1,LOW);
+    
   // Pair of inputs state indicators 
   if ((digitalRead(optoInPin[0]) == LOW) && (digitalRead(optoInPin[1]) == LOW)) {
     board.setSeg(0,30);
