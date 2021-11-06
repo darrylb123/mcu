@@ -58,12 +58,7 @@ const uint8_t noOfKeyIn = sizeof(keyInPin);                // calculate the numb
 const uint8_t noOfRelay = 8;                               // relays on board driven connected to shift registers
 byte key_value;                                            // the last pressed key
 
-// Blinker latch flags
-int latchLeft = 0;
-int latchRight = 0;
-uint32_t timeLeft = 0;
-uint32_t timeRight = 0;
-const int minBlink = 10;
+
 
 // the base class implements the basic functionality
 // which should be the same for all sketches with this hardware:
@@ -132,7 +127,12 @@ class IO22D08 {
 
   public:
     IO22D08() {}
-     uint8_t blinkState = 1;
+     uint8_t blinkState = 1;// Blinker latch flags
+    int latchLeft = 0;
+    int latchRight = 0;
+    const int minBlink = 20;
+    uint32_t blinkDebounce;
+    const int minDebounce = 500;
 
     void begin() {
       digitalWrite(OE_595, LOW);       // Enable Pin of first 74HC595
@@ -205,34 +205,38 @@ void readInput()
    *  unless other blinker is is operated which unlatches
    *  eg Right blinker switch initiates minBlink flashes unless the left blinker switch resets it
    */
-  if (latchLeft)
+  if (board.latchLeft)
     board.pinWrite(0,board.blinkState);
-  if (latchRight)
-    board.pinWrite(1,board.blinkState);
-    
-  if (digitalRead(optoInPin[0]) == LOW) { // Left Blinker
-    board.setSeg(0,29); // display |
-    if ( latchRight == 0 ) {
-      latchLeft = minBlink;
-    } else {
-      latchRight = 0;
-    }
-    
-     
-  } else if ( latchLeft == 0 )
+  else
     board.pinWrite(0,LOW);
-
-  if (digitalRead(optoInPin[1]) == LOW) { // Right Blinker
-    board.setSeg(0,1);
-    if ( latchLeft == 0 ) {
-      latchRight = minBlink;
-    } else {
-      latchLeft = 0;
-    }
-    
-    
-  } else if ( latchRight == 0 )
+  if (board.latchRight)
+    board.pinWrite(1,board.blinkState);
+  else
     board.pinWrite(1,LOW);
+  
+  if ((digitalRead(optoInPin[0]) == LOW) && (board.blinkDebounce < millis())) { // Left Blinker
+    board.setSeg(0,29); // display |
+    if ( board.latchRight == 0 ) {
+      if (board.latchLeft == 0)
+        board.latchLeft = board.minBlink;
+    } else {
+      board.latchRight = 0;
+      board.blinkDebounce = millis() + board.minDebounce;
+      
+    }
+  } 
+
+  if ((digitalRead(optoInPin[1]) == LOW) && (board.blinkDebounce < millis()) ) { // Right Blinker
+    board.setSeg(0,1);
+    if ( board.latchLeft == 0 ) {
+      if (board.latchRight == 0)
+        board.latchRight = board.minBlink;
+    } else {
+      board.latchLeft = 0;
+      board.blinkDebounce = millis() + board.minDebounce;
+    }
+   }
+    
     
   // Pair of inputs state indicators 
   if ((digitalRead(optoInPin[0]) == LOW) && (digitalRead(optoInPin[1]) == LOW)) {
@@ -309,6 +313,7 @@ void setup() {
   for (auto &i : optoInPin) pinMode(i, INPUT_PULLUP);      // init the optocoupler
   for (auto &i : keyInPin) pinMode(i, INPUT_PULLUP);       // init the discrete input keys
   board.begin();                                           // prepare the board hardware
+  board.          blinkDebounce = millis();
 }
 
 void loop() {
