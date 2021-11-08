@@ -52,13 +52,15 @@ const uint8_t OE_595 = A1;
 // A6 - unused - not connected
 // A7 - unused - not connected
 const uint8_t optoInPin[] {2, 3, 4, 5, 6, A0, 12, 11};     // the input GPIO's with optocoupler - LOW active
+
 const uint8_t keyInPin[] {7, 8, 9, 10};                    // the input GPIO's with momentary buttons - LOW active
 const uint8_t noOfOptoIn = sizeof(optoInPin);              // calculate the number of opto inputs
 const uint8_t noOfKeyIn = sizeof(keyInPin);                // calculate the number of discrete input keys
 const uint8_t noOfRelay = 8;                               // relays on board driven connected to shift registers
 byte key_value;                                            // the last pressed key
-
-
+uint8_t inState[noOfOptoIn];                               // Debounced Opto State
+uint32_t scanMillis;                                       // Scan Input timing
+const int scanPeriod = 50;
 
 // the base class implements the basic functionality
 // which should be the same for all sketches with this hardware:
@@ -217,8 +219,7 @@ void readInput()
   if ((digitalRead(optoInPin[0]) == LOW) && (board.blinkDebounce < millis())) { // Left Blinker
     board.setSeg(0,29); // display |
     if ( board.latchRight == 0 ) {
-      if (board.latchLeft == 0)
-        board.latchLeft = board.minBlink;
+      board.latchLeft = board.minBlink;
     } else {
       board.latchRight = 0;
       board.blinkDebounce = millis() + board.minDebounce;
@@ -229,8 +230,7 @@ void readInput()
   if ((digitalRead(optoInPin[1]) == LOW) && (board.blinkDebounce < millis()) ) { // Right Blinker
     board.setSeg(0,1);
     if ( board.latchLeft == 0 ) {
-      if (board.latchRight == 0)
-        board.latchRight = board.minBlink;
+      board.latchRight = board.minBlink;
     } else {
       board.latchLeft = 0;
       board.blinkDebounce = millis() + board.minDebounce;
@@ -313,10 +313,16 @@ void setup() {
   for (auto &i : optoInPin) pinMode(i, INPUT_PULLUP);      // init the optocoupler
   for (auto &i : keyInPin) pinMode(i, INPUT_PULLUP);       // init the discrete input keys
   board.begin();                                           // prepare the board hardware
-  board.          blinkDebounce = millis();
+  board.blinkDebounce = millis();
+  scanMillis = millis() + scanPeriod;
+  
 }
 
 void loop() {
-  readInput();            // handle input pins
+  
+  if (millis() > scanMillis){
+    scanMillis = millis() + scanPeriod;  
+    readInput();            // handle input pins
+  }
   board.tick();      // timekeeping for display/
 }
