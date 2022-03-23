@@ -2,6 +2,7 @@
   IO22D08
   DC 12V 8 Channel Pro mini PLC Board Relay Shield Module
   for Arduino Multifunction Delay Timer Switch Board
+  Arduino Pro Mini
 
   Hardware:
   4 bit Common Cathode Digital Tube Module (two shift registers)
@@ -286,10 +287,10 @@ void readInput()
   } 
     
   if (digitalRead(optoInPin[6]) == LOW) { // Ignition
-    board.pinWrite(6,LOW);
+    board.pinWrite(6,HIGH);
     board.setSeg(3,29);
   } else 
-    board.pinWrite(6,HIGH);
+    board.pinWrite(6,LOW);
 
   if (digitalRead(optoInPin[7]) == LOW) { // Start
     board.pinWrite(7,HIGH);
